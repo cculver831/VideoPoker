@@ -10,4 +10,5 @@ public class Card : ScriptableObject
     public Sprite CardFace;
     public string Suit;
     public bool isAce;
+    public bool isPlayed;
 }

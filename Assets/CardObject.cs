@@ -12,19 +12,13 @@ public class CardObject : MonoBehaviour
     private Text text;
 
     public bool Hold = false;
-
     private Image image;
     // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
         text.enabled = false;
+        image = GetComponent<Image>();
         UpdateImage();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public void RemoveCard()
