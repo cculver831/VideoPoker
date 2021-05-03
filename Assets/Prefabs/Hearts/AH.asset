@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 702b7d6935326004197d5bc2256a5924, type: 3}
   m_Name: AH
   m_EditorClassIdentifier: 
-  Value: 3
+  Value: 14
   CardFace: {fileID: 21300000, guid: c899808c34a4c064a849ce7211b2c501, type: 3}
   Suit: h
   isAce: 0
+  isPlayed: 1

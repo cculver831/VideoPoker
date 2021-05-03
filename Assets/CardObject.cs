@@ -34,7 +34,7 @@ public class CardObject : MonoBehaviour
     public void HoldCard()
     {
         Hold = !Hold;
-        text.enabled = Hold;
+        UpdateHold();
     }
 
 
@@ -42,4 +42,10 @@ public class CardObject : MonoBehaviour
     {
         image.sprite = myCard.CardFace;
     }
+
+    public void UpdateHold()
+    {
+        text.enabled = Hold;
+    }
+
 }
