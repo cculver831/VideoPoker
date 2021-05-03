@@ -434,7 +434,7 @@ public class HouseCards : MonoBehaviour
         //Debug.Log("PayoutDefault: " + winIndex);
         Player.balance += PayoutDefault[winIndex] * PlayerBet;
         UpdateBalance();
-        WinType.text = "You won: " + Wins[winIndex].ToString();
+        WinType.text = "You won: " + Wins[winIndex].ToString() + ", here\'s " + PayoutDefault[winIndex] * PlayerBet + " coins";
         PlayAgainButton.SetActive(true);
     }
     #endregion
