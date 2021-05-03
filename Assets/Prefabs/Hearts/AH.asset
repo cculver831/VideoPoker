@@ -15,5 +15,5 @@ MonoBehaviour:
   Value: 14
   CardFace: {fileID: 21300000, guid: c899808c34a4c064a849ce7211b2c501, type: 3}
   Suit: h
-  isAce: 0
+  isAce: 1
   isPlayed: 1

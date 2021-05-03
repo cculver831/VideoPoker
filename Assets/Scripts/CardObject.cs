@@ -48,4 +48,8 @@ public class CardObject : MonoBehaviour
         text.enabled = Hold;
     }
 
+    public void SetImage(Sprite i)
+    {
+        image.sprite = i;
+    }
 }

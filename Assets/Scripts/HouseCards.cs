@@ -8,30 +8,45 @@ using UnityEngine.UI;
 //Deck of Cards for Player to use
 public class HouseCards : MonoBehaviour
 {
+    [Header("Effects")]
+    [SerializeField]
+    Sprite CardDown;
+    [SerializeField]
+    AudioClip CardFlip;
+    [SerializeField]
+    AudioSource Source;
+
+
+    [Header("Deck")]
     [SerializeField]
     List<Card> Deck;
 
+    [Header("Player Ref")]
     [SerializeField]
     PlayerCards Player;
-    private int Top;
+    
 
+    [Header("UI Ref")]
     [SerializeField]
     GameObject PlayAgainButton;
-
+    [SerializeField]
+    GameObject DealButton;
     [SerializeField]
     Text CurrentBet;
     [SerializeField]
     Text Balance;
     [SerializeField]
     Text WinType;
-    private int DealCount;
-    private int PlayerBet;
-    bool Restart = false;
-    //Card Reading
-    string[] straights = new string[9] { "234514", "23456", "34567", "45678", "56789", "678910", "7891011", "89101112", "910111213" };
+    
+
+    //  Card Reading/Dealing 
+    string[] straights = new string[10] { "234514", "23456", "34567", "45678", "56789", "678910", "7891011", "89101112", "910111213", "1011121314" };
     string RoyalStraight = "1011121314";
     string[] Wins = new string[9] { "Royal Flush", "Straight Flush", "4 of a kind", "Full House", "Flush", "Straight", "3 of a kind", "Two Pair", "Jacks or Better" };
-    int[] PayoutDefault = new int[9] {250, 50, 25, 9, 6, 4, 3, 2, 1};
+    int[] PayoutDefault = new int[9] { 250, 50, 25, 9, 6, 4, 3, 2, 1 };
+    private int Top;
+    private int PlayerBet;
+
 
     private void Start()
     {
@@ -40,7 +55,6 @@ public class HouseCards : MonoBehaviour
         Shuffle();
         DealCards();
         PlayerBet = 0;
-        DealCount = 0;
         Top = 0;
         Balance.text += Player.balance;
         CurrentBet.text += PlayerBet;
@@ -88,21 +102,43 @@ public class HouseCards : MonoBehaviour
             CardObject c = cards[i].GetComponent<CardObject>();
             if (!c.Hold)
             {
+
                 //Add discarded cards to deck
-                AddtoDeck(c.myCard);
-                Deal(c);
-            }
-            else if (Restart)
-            {
-                Debug.Log("Restart:" + Restart);
                 AddtoDeck(c.myCard);
                 Deal(c);
             }
 
         }
-       
+
     }
 
+    //Visual Effect
+    IEnumerator HideCards()
+    {
+        //play Sound
+        Source.clip = CardFlip;
+        Source.Play();
+        foreach (GameObject g in Player.ShowHand())
+        {
+            CardObject c = g.GetComponent<CardObject>();
+            if(!c.Hold)
+                c.SetImage(CardDown);
+        }
+
+        //Debug.Log("Card Image called");
+        yield return new WaitForSeconds(2);
+        foreach (GameObject g in Player.ShowHand())
+        {
+            CardObject c = g.GetComponent<CardObject>();
+            c.SetImage(c.myCard.CardFace);
+        }
+        //play Sound
+        Source.clip = CardFlip;
+        Source.Play();
+        //Check Player's Hand
+        ReadCards(Player.ShowCards());
+
+    }
 
     void AddtoDeck(Card c)
     {
@@ -135,7 +171,7 @@ public class HouseCards : MonoBehaviour
         {
             Player.balance--;
             PlayerBet++;
-            CurrentBet.text = "Current Bet: " + PlayerBet;
+            CurrentBet.text = "Bet: " + PlayerBet;
             UpdateBalance();
         }
 
@@ -143,10 +179,14 @@ public class HouseCards : MonoBehaviour
 
     public void BetMax()
     {
-        Player.balance -= 5;
-        CurrentBet.text = "Bet: 5";
-        PlayerBet = 5;
-        UpdateBalance();
+        if(PlayerBet != 5)
+        {
+            Player.balance -= 5;
+            CurrentBet.text = "Bet: 5";
+            PlayerBet = 5;
+            UpdateBalance();
+        }
+
     }
 
     //Update Player's Balance
@@ -165,8 +205,8 @@ public class HouseCards : MonoBehaviour
     public void Deal()
     {
         DealCards();
-        //Check Player's Hand
-        ReadCards(Player.ShowCards());
+        StartCoroutine(HideCards());
+        DealButton.SetActive(false);
     }
 
 
@@ -175,23 +215,25 @@ public class HouseCards : MonoBehaviour
         Player.ResetHolds();
         Shuffle();
         Deal(Player.ShowHand());
-        DealCount = 0;
         PlayerBet = 0;
         Balance.text = "Balance: " + Player.GetBalance().ToString();
         CurrentBet.text = "Bet: " + PlayerBet;
         WinType.text = "";
         PlayAgainButton.SetActive(false);
+        DealButton.SetActive(true);
     }
     #endregion
 
-    #region Win
+    #region Win Logic
     //Read Player Card
     private void ReadCards(List<Card> cards)
     {
         int[] values = new int[5];
         values = Player.GetValues(); //Get Card Values
         Array.Sort(values); //Sort values in ascending order\
-        //Check for Straight Flush
+
+
+        //Bool Values to Determine Win Type
         bool isFlush = SameSuit(cards);
         bool isStraight = Straight(values);
         bool isRoyal = Royal(values);
@@ -199,6 +241,8 @@ public class HouseCards : MonoBehaviour
         bool is3 = false;
         bool is4 = false;
         bool isJackorBetter = JackOrBetter(cards);
+
+        //Make Values into list
         List<int> valList = values.ToList();
         List<int> pairs = new List<int>();
         int Count = 0;
@@ -227,28 +271,38 @@ public class HouseCards : MonoBehaviour
                     break;
             }
         }
-
+        //Check for multiple Pairs
         bool isTwoPair = TwoPairs(pairs);
+
+        //Check what the Player Wins
+        CheckWin(isFlush, isRoyal, isStraight, is4, is3, is2, isTwoPair, isJackorBetter);
+
+    }
+
+    private void CheckWin(bool isFlush, bool isRoyal, bool isStraight, bool is4, bool is3, bool is2, bool isTwoPair, bool isJackorBetter)
+    {
+        //Check WinType
+
         //Royal Flush
         if (isFlush && isRoyal)
         {
             Payout(0, PlayerBet);
-            Debug.Log("Royal Flush");
+            //Debug.Log("Royal Flush");
         }
         else if (isStraight && isFlush) //Straight Flush
         {
             Payout(1, PlayerBet);
-            Debug.Log("Straight Flush");
+            //Debug.Log("Straight Flush");
         }
         else if (is4)//4 of a kind
         {
             Payout(2, PlayerBet);
-            Debug.Log("Four of a Kind");
+            // Debug.Log("Four of a Kind");
         }
         else if (is2 && is3) //Full House
         {
             Payout(3, PlayerBet);
-            Debug.Log("Full House");
+            //Debug.Log("Full House");
         }
         else if (isFlush)  //Flush
         {
@@ -269,15 +323,14 @@ public class HouseCards : MonoBehaviour
         else if (isJackorBetter)  //Jacks or better
         {
             Payout(8, PlayerBet);
-            Debug.Log("Better than nothing :/");
+            //Debug.Log("Better than nothing :/");
         }
         else
         {
-            Debug.Log("You lost :(");
+            // Debug.Log("You lost :(");
             WinType.text = "You lost :(";
             PlayAgainButton.SetActive(true);
         }
-
     }
 
     //Check SameSuit (Flush)
@@ -376,9 +429,9 @@ public class HouseCards : MonoBehaviour
     //Pay the Player
     private void Payout(int winIndex, int PlayerBet)
     {
-        Debug.Log("Payout: " + PayoutDefault[winIndex] * PlayerBet);
-        Debug.Log("Player Bet: " + PlayerBet);
-        Debug.Log("PayoutDefault: " + winIndex);
+       // Debug.Log("Payout: " + PayoutDefault[winIndex] * PlayerBet);
+        //Debug.Log("Player Bet: " + PlayerBet);
+        //Debug.Log("PayoutDefault: " + winIndex);
         Player.balance += PayoutDefault[winIndex] * PlayerBet;
         UpdateBalance();
         WinType.text = "You won: " + Wins[winIndex].ToString();
